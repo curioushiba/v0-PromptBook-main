@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       prompt,
-      model = "gemini-pro",
+      model = "gemini-1.5-flash",
       temperature = 0.7,
       maxOutputTokens = 2000,
       stream = false

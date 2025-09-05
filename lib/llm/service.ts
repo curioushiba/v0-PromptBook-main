@@ -74,7 +74,7 @@ Deliver the complete meta-prompt following the specified response template.`
       this.config = {
         provider,
         apiKey: "", // API key is handled server-side
-        model: provider === "openai" ? "gpt-3.5-turbo" : "gemini-pro",
+        model: provider === "openai" ? "gpt-3.5-turbo" : "gemini-1.5-flash",
         temperature: 0.7,
         maxTokens: 2000
       }
@@ -142,7 +142,7 @@ Deliver the complete meta-prompt following the specified response template.`
       },
       body: JSON.stringify({
         prompt: `${systemPrompt}\n\n${userPrompt}`,
-        model: this.config?.model || "gemini-pro",
+        model: this.config?.model || "gemini-1.5-flash",
         temperature: this.config?.temperature || 0.7,
         maxOutputTokens: this.config?.maxTokens || 2000,
         stream: options.streaming || false

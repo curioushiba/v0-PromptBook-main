@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 })
       }
       
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
       
       const response = await fetch(apiUrl, {
         method: "POST",
