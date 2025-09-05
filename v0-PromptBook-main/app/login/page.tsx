@@ -3,7 +3,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { Sparkles } from "lucide-react"
 
-import { serverAuth } from "@/lib/supabase/auth"
+import { serverAuth } from "@/lib/supabase/server-auth"
 import { LoginForm } from "@/components/auth/login-form"
 
 export const metadata: Metadata = {

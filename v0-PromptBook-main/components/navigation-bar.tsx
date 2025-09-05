@@ -140,14 +140,18 @@ export default function NavigationBar() {
             className="w-56 border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white"
             align="start"
           >
-            <DropdownMenuItem className="flex items-center gap-2 font-bold hover:bg-black hover:text-white rounded-lg m-1">
-              <Clock className="h-4 w-4" />
-              Recent Prompts
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex items-center gap-2 font-bold hover:bg-black hover:text-white rounded-lg m-1">
-              <Heart className="h-4 w-4" />
-              Favorite Prompts
-            </DropdownMenuItem>
+            <Link href="/recent">
+              <DropdownMenuItem className="flex items-center gap-2 font-bold hover:bg-black hover:text-white rounded-lg m-1 cursor-pointer">
+                <Clock className="h-4 w-4" />
+                Recent Prompts
+              </DropdownMenuItem>
+            </Link>
+            <Link href="/favorites">
+              <DropdownMenuItem className="flex items-center gap-2 font-bold hover:bg-black hover:text-white rounded-lg m-1 cursor-pointer">
+                <Heart className="h-4 w-4" />
+                My Favorite Prompts
+              </DropdownMenuItem>
+            </Link>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -159,6 +163,17 @@ export default function NavigationBar() {
           >
             <Folder className="h-4 w-4" />
             <span className="hidden sm:inline">Prompt Folders</span>
+          </Button>
+        </Link>
+
+        {/* Settings */}
+        <Link href="/settings">
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 rounded-xl border-2 border-black font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all bg-transparent"
+          >
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Settings</span>
           </Button>
         </Link>
 

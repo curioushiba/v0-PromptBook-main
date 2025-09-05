@@ -58,7 +58,7 @@ export default function Dashboard() {
     { id: "business", name: "Business Strategy", color: "from-orange-500 to-red-500" },
   ]
 
-  const favoritePrompts = [
+  const sampleFavoritePrompts = [
     {
       emoji: "🚀",
       title: "Product Launch Expert",
@@ -166,9 +166,43 @@ export default function Dashboard() {
     }
   }
 
-  const handleSearch = (query: string) => {
-    console.log("Searching for:", query)
-    // TODO: Implement search logic
+  const handleSearch = async (query: string) => {
+    try {
+      if (!query.trim()) {
+        // If search is empty, reload all prompts
+        await loadPrompts()
+        await loadFavoritePrompts()
+        return
+      }
+
+      setIsLoadingPrompts(true)
+      setIsLoadingFavorites(true)
+
+      // Search in both regular prompts and favorites
+      const response = await fetch(`/api/prompts?search=${encodeURIComponent(query)}`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to search prompts')
+      }
+
+      const data = await response.json()
+      
+      // Filter results for favorites and regular prompts
+      const searchResults = data.prompts || []
+      const favoriteResults = searchResults.filter((p: any) => p.is_favorite)
+      const regularResults = searchResults
+      
+      setPrompts(regularResults)
+      setFavoritePrompts(favoriteResults)
+    } catch (error) {
+      console.error('Error searching prompts:', error)
+      toast.error("Search failed", {
+        description: "Could not search prompts. Please try again."
+      })
+    } finally {
+      setIsLoadingPrompts(false)
+      setIsLoadingFavorites(false)
+    }
   }
 
   const handleAddToFolder = (promptIndex: number) => {
@@ -176,11 +210,39 @@ export default function Dashboard() {
     setIsFolderModalOpen(true)
   }
 
-  const handleSaveToFolder = (folderId: string) => {
-    console.log(`Saving prompt ${selectedPromptForFolder} to folder ${folderId}`)
-    // TODO: Implement save to folder logic
-    setIsFolderModalOpen(false)
-    setSelectedPromptForFolder(null)
+  const handleSaveToFolder = async (folderId: string) => {
+    if (selectedPromptForFolder === null) return
+    
+    try {
+      const prompt = prompts[selectedPromptForFolder]
+      if (!prompt?.id) {
+        toast.error("Invalid prompt selected")
+        return
+      }
+
+      const response = await fetch(`/api/folders/${folderId}/prompts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt_id: prompt.id })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to add prompt to folder')
+      }
+
+      toast.success("Added to folder", {
+        description: "Prompt has been added to the selected folder."
+      })
+      
+      setIsFolderModalOpen(false)
+      setSelectedPromptForFolder(null)
+    } catch (error) {
+      console.error('Error adding prompt to folder:', error)
+      toast.error("Failed to add to folder", {
+        description: error instanceof Error ? error.message : "Could not add prompt to folder."
+      })
+    }
   }
 
   // Handle copying prompt to clipboard
