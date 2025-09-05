@@ -11,7 +11,11 @@
       "Read(/C:\\Users\\dexsa\\OneDrive\\Desktop\\v0-PromptBook-main\\Context/**)",
       "Read(/C:\\Users\\dexsa\\OneDrive\\Desktop\\v0-PromptBook-main\\Context/**)",
       "Read(/C:\\Users\\dexsa\\OneDrive\\Desktop\\v0-PromptBook-main\\v0-PromptBook-main/**)",
-      "Read(/C:\\Users\\dexsa\\OneDrive\\Desktop\\v0-PromptBook-main\\v0-PromptBook-main\\app/**)"
+      "Read(/C:\\Users\\dexsa\\OneDrive\\Desktop\\v0-PromptBook-main\\v0-PromptBook-main\\app/**)",
+      "mcp__Ref__ref_search_documentation",
+      "Bash(npm install:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npx shadcn@latest add:*)"
     ],
     "deny": [],
     "ask": []
