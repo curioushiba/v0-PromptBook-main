@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["@upstash/context7-mcp"],
+      "env": {
+        "CONTEXT7_API_KEY": "your-api-key-here"
+      }
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp"]
+    }
+  }
+}
