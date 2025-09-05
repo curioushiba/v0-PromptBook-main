@@ -1,5 +1,6 @@
 import { createClient } from './client'
 import { type User } from '@supabase/supabase-js'
+import { getEmailConfirmationUrl } from '@/lib/utils/url'
 
 // Client-side authentication utilities
 export const auth = {
@@ -14,6 +15,7 @@ export const auth = {
       email,
       password,
       options: {
+        emailRedirectTo: getEmailConfirmationUrl(),
         data: {
           full_name: options?.firstName && options?.lastName 
             ? `${options.firstName} ${options.lastName}` 
@@ -121,9 +123,10 @@ export const auth = {
   // Reset password
   async resetPassword(email: string) {
     const supabase = createClient()
+    const { getAuthCallbackUrl } = await import('@/lib/utils/url')
     
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      redirectTo: getAuthCallbackUrl('/auth/reset-password'),
     })
     
     return { data, error }

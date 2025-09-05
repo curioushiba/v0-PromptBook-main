@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react"
 
 import { auth } from "@/lib/supabase/auth"
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth"
@@ -28,6 +28,26 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  // Check for confirmation or error messages in URL
+  useEffect(() => {
+    const confirmed = searchParams.get('confirmed')
+    const message = searchParams.get('message')
+    const errorParam = searchParams.get('error')
+    
+    if (confirmed === 'true') {
+      toast.success('Email confirmed!', {
+        description: message || 'You can now log in with your credentials.',
+      })
+    } else if (message && !errorParam) {
+      toast.info('Check your email', {
+        description: decodeURIComponent(message),
+      })
+    } else if (errorParam) {
+      setError(message ? decodeURIComponent(message) : 'An error occurred during confirmation.')
+    }
+  }, [searchParams])
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),

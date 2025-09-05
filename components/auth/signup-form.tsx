@@ -86,12 +86,13 @@ export function SignupForm() {
         return
       }
 
-      toast.success("Account created!", {
-        description: "Please check your email to verify your account.",
+      // Show success message with email confirmation instructions
+      toast.success("Account created successfully!", {
+        description: "Please check your email to confirm your account before logging in.",
       })
 
-      // Redirect to login after successful signup
-      router.push("/login?verified=false")
+      // Redirect to login with message about email confirmation
+      router.push("/login?message=Please+check+your+email+to+confirm+your+account")
     } catch (err) {
       setError("An unexpected error occurred. Please try again.")
       toast.error("Error", {
