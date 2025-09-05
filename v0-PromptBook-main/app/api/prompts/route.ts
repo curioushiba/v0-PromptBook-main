@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
+import type { Prompt, CreatePromptRequest, UpdatePromptRequest, PromptQueryParams } from "@/types"
 
 // Schema for creating a new prompt
 const createPromptSchema = z.object({
@@ -167,7 +168,15 @@ export async function PATCH(request: NextRequest) {
     const { id, ...updateData } = validatedData
 
     // Convert field names to database columns
-    const dbData: any = {}
+    const dbData: Partial<{
+      title: string;
+      role_field: string;
+      personality_field: string;
+      instruction_field: string;
+      context_field: string;
+      example_field: string;
+      meta_prompt: string;
+    }> = {}
     if (updateData.title !== undefined) dbData.title = updateData.title
     if (updateData.role !== undefined) dbData.role_field = updateData.role
     if (updateData.personality !== undefined) dbData.personality_field = updateData.personality

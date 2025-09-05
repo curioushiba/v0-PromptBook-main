@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import type { Folder, CreateFolderRequest } from '@/types'
 
 // Validation schemas
 const createFolderSchema = z.object({
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         name: validatedData.name,
         description: validatedData.description,
-        color: validatedData.color
+        color: validatedData.color as any // Supabase type mismatch - safe to cast
       })
       .select()
       .single()
@@ -165,7 +166,11 @@ export async function PATCH(request: NextRequest) {
     const validatedData = updateFolderSchema.parse(body)
 
     // Prepare update object
-    const updateData: any = {}
+    const updateData: Partial<{
+      name: string;
+      description: string | null;
+      color: string;
+    }> = {}
     if (validatedData.name !== undefined) updateData.name = validatedData.name
     if (validatedData.description !== undefined) updateData.description = validatedData.description
     if (validatedData.color !== undefined) updateData.color = validatedData.color
@@ -173,7 +178,7 @@ export async function PATCH(request: NextRequest) {
     // Update the folder
     const { data: folder, error } = await supabase
       .from('folders')
-      .update(updateData)
+      .update(updateData as any) // Type cast for Supabase color enum
       .eq('id', validatedData.id)
       .eq('user_id', user.id) // Ensure user owns the folder
       .select()

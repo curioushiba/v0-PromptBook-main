@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ChevronDown, Home, FileText, Folder, Clock, Heart, Menu, X, Settings, LogOut, User } from "lucide-react"
+import { ChevronDown, Home, FileText, Folder, Clock, Heart, Menu, X, Settings, LogOut, User as UserIcon } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { auth } from "@/lib/supabase/auth"
 import { toast } from "sonner"
@@ -78,7 +78,7 @@ export default function NavigationBar() {
 
   const getUserInitials = () => {
     const displayName = getUserDisplayName()
-    return displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    return displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
   // Show nothing while loading

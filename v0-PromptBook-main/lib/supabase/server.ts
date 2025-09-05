@@ -1,13 +1,22 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { Database } from './types'
+import { env } from '@/lib/env'
 
 export function createClient() {
   const cookieStore = cookies()
 
+  // Validate environment variables before using them
+  const supabaseUrl = env.get('NEXT_PUBLIC_SUPABASE_URL');
+  const supabaseKey = env.get('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase configuration is missing. Please check your environment variables.');
+  }
+
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         get(name: string) {

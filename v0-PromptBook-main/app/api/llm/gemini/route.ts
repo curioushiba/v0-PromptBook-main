@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
+import { env } from "@/lib/env"
 
 const requestSchema = z.object({
   prompt: z.string(),
@@ -11,10 +12,18 @@ const requestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Validate environment first
+    if (!env.hasGemini()) {
+      return NextResponse.json(
+        { error: "Gemini API is not configured. Please add GEMINI_API_KEY to your environment variables." },
+        { status: 503 }
+      )
+    }
+
     const body = await request.json()
     const validatedData = requestSchema.parse(body)
     
-    const apiKey = process.env.GEMINI_API_KEY
+    const apiKey = env.get('GEMINI_API_KEY')
     if (!apiKey) {
       return NextResponse.json(
         { error: "Gemini API key not configured" },

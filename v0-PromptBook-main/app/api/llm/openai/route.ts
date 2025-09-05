@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
+import { env } from "@/lib/env"
+import type { LLMRequest, LLMResponse } from "@/types"
 
 const requestSchema = z.object({
   messages: z.array(z.object({
@@ -14,10 +16,18 @@ const requestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Validate environment first
+    if (!env.hasOpenAI()) {
+      return NextResponse.json(
+        { error: "OpenAI API is not configured. Please add OPENAI_API_KEY to your environment variables." },
+        { status: 503 }
+      )
+    }
+
     const body = await request.json()
     const validatedData = requestSchema.parse(body)
     
-    const apiKey = process.env.OPENAI_API_KEY
+    const apiKey = env.get('OPENAI_API_KEY')
     if (!apiKey) {
       return NextResponse.json(
         { error: "OpenAI API key not configured" },
