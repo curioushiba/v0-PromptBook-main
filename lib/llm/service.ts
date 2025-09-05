@@ -112,7 +112,7 @@ Synthesize these into a single, cohesive prompt that maximizes effectiveness.`
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        model: this.config?.model || "gpt-4-turbo-preview",
+        model: this.config?.model || "gpt-3.5-turbo",
         temperature: this.config?.temperature || 0.7,
         max_tokens: this.config?.maxTokens || 2000,
         stream: options.streaming || false
@@ -121,8 +121,9 @@ Synthesize these into a single, cohesive prompt that maximizes effectiveness.`
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || "Failed to generate with OpenAI")
+      const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }))
+      console.error("OpenAI API error:", errorData)
+      throw new Error(errorData.error || errorData.message || "Failed to generate with OpenAI")
     }
 
     if (options.streaming) {
@@ -155,8 +156,9 @@ Synthesize these into a single, cohesive prompt that maximizes effectiveness.`
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || "Failed to generate with Gemini")
+      const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }))
+      console.error("Gemini API error:", errorData)
+      throw new Error(errorData.error || errorData.message || "Failed to generate with Gemini")
     }
 
     if (options.streaming) {
