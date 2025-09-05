@@ -5,18 +5,37 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Menu, Plus, Heart, Copy, Edit3, ChevronLeft, ChevronRight } from "lucide-react"
+import { Menu, Plus, Heart, Copy, Edit3, ChevronLeft, ChevronRight, Sparkles, Save, Loader2 } from "lucide-react"
 import NavigationBar from "@/components/navigation-bar"
 import MobileNavigation from "@/components/mobile-navigation"
 import SearchBar from "@/components/search-bar"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { toast } from "sonner"
+import { validatePromptSize, estimateTokenCount } from "@/lib/validations/prompt"
+import { prompts } from "@/lib/api/prompts"
+import { useRouter } from "next/navigation"
+import { Badge } from "@/components/ui/badge"
 
 export default function Dashboard() {
+  const router = useRouter()
   const [myPromptsIndex, setMyPromptsIndex] = useState(0)
   const [favoritePromptsIndex, setFavoritePromptsIndex] = useState(0)
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false)
   const [selectedPromptForFolder, setSelectedPromptForFolder] = useState<number | null>(null)
+  
+  // Form state for CREATE PROMPT
+  const [promptTitle, setPromptTitle] = useState("")
+  const [roleField, setRoleField] = useState("")
+  const [personalityField, setPersonalityField] = useState("")
+  const [instructionField, setInstructionField] = useState("")
+  const [contextField, setContextField] = useState("")
+  const [exampleField, setExampleField] = useState("")
+  
+  // Generated prompt state
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generatedPrompt, setGeneratedPrompt] = useState("")
+  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false)
 
   const myPrompts = [
     {
@@ -85,6 +104,143 @@ export default function Dashboard() {
     // TODO: Implement save to folder logic
     setIsFolderModalOpen(false)
     setSelectedPromptForFolder(null)
+  }
+
+  const generateMetaPrompt = () => {
+    // Combine all fields into a structured meta-prompt
+    let metaPrompt = ""
+    
+    if (roleField) {
+      metaPrompt += `## ROLE\n${roleField}\n\n`
+    }
+    
+    if (personalityField) {
+      metaPrompt += `## PERSONALITY\n${personalityField}\n\n`
+    }
+    
+    if (instructionField) {
+      metaPrompt += `## INSTRUCTIONS\n${instructionField}\n\n`
+    }
+    
+    if (contextField) {
+      metaPrompt += `## CONTEXT\n${contextField}\n\n`
+    }
+    
+    if (exampleField) {
+      metaPrompt += `## EXAMPLES\n${exampleField}\n\n`
+    }
+    
+    return metaPrompt.trim()
+  }
+
+  const handleCreateMetaPrompt = async () => {
+    // Validate required fields
+    if (!roleField.trim()) {
+      toast.error("Role is required", {
+        description: "Please define the role or persona for the AI"
+      })
+      return
+    }
+    
+    if (!instructionField.trim()) {
+      toast.error("Instructions are required", {
+        description: "Please provide clear instructions for what the AI should do"
+      })
+      return
+    }
+    
+    // Validate prompt size
+    const formData = {
+      title: promptTitle || "Untitled Prompt",
+      role: roleField,
+      personality: personalityField,
+      instruction: instructionField,
+      context: contextField,
+      example: exampleField
+    }
+    
+    const sizeValidation = validatePromptSize(formData)
+    if (!sizeValidation.isValid) {
+      toast.error("Prompt too long", {
+        description: sizeValidation.message
+      })
+      return
+    }
+    
+    setIsGenerating(true)
+    
+    try {
+      // Generate the meta-prompt
+      const metaPrompt = generateMetaPrompt()
+      
+      if (!metaPrompt) {
+        toast.error("No content to generate", {
+          description: "Please fill in at least the role and instructions fields"
+        })
+        return
+      }
+      
+      setGeneratedPrompt(metaPrompt)
+      setIsPromptModalOpen(true)
+      
+      toast.success("Meta prompt generated!", {
+        description: "Your enhanced prompt is ready to use"
+      })
+    } catch (error) {
+      toast.error("Generation failed", {
+        description: error instanceof Error ? error.message : "An error occurred"
+      })
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleCopyPrompt = () => {
+    if (generatedPrompt) {
+      navigator.clipboard.writeText(generatedPrompt)
+      toast.success("Copied to clipboard!", {
+        description: "The meta prompt has been copied"
+      })
+    }
+  }
+
+  const handleSavePrompt = async () => {
+    try {
+      setIsGenerating(true)
+      
+      const savedPrompt = await prompts.create({
+        title: promptTitle || "Untitled Prompt",
+        role: roleField,
+        personality: personalityField || undefined,
+        instruction: instructionField,
+        context: contextField || undefined,
+        example: exampleField || undefined,
+        metaPrompt: generatedPrompt
+      })
+      
+      toast.success("Prompt saved!", {
+        description: "Your prompt has been saved to your library"
+      })
+      
+      // Clear form
+      setPromptTitle("")
+      setRoleField("")
+      setPersonalityField("")
+      setInstructionField("")
+      setContextField("")
+      setExampleField("")
+      setGeneratedPrompt("")
+      setIsPromptModalOpen(false)
+      
+      // Optionally navigate to the prompts page
+      // router.push("/prompts")
+    } catch (error) {
+      toast.error("Save failed", {
+        description: error instanceof Error ? error.message : "Could not save prompt"
+      })
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   return (
@@ -251,13 +407,29 @@ export default function Dashboard() {
             <h2 className="text-xl sm:text-2xl font-black mb-6">CREATE PROMPT</h2>
             <div className="bg-white/50 border-4 border-black rounded-xl p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
               <div className="space-y-6">
+                {/* TITLE Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="promptTitle" className="text-lg font-black uppercase tracking-wide">
+                    PROMPT TITLE (OPTIONAL)
+                  </Label>
+                  <Input
+                    id="promptTitle"
+                    value={promptTitle}
+                    onChange={(e) => setPromptTitle(e.target.value)}
+                    placeholder="e.g., Product Description Writer, Code Review Assistant..."
+                    className="border-2 border-black rounded-lg font-medium shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white"
+                  />
+                </div>
+
                 {/* ROLE Field */}
                 <div className="space-y-2">
                   <Label htmlFor="role" className="text-lg font-black uppercase tracking-wide">
-                    ROLE
+                    ROLE *
                   </Label>
                   <Input
                     id="role"
+                    value={roleField}
+                    onChange={(e) => setRoleField(e.target.value)}
                     placeholder="e.g., Expert copywriter, Creative director, Marketing strategist..."
                     className="border-2 border-black rounded-lg font-medium shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white"
                   />
@@ -266,10 +438,12 @@ export default function Dashboard() {
                 {/* PERSONALITY Field */}
                 <div className="space-y-2">
                   <Label htmlFor="personality" className="text-lg font-black uppercase tracking-wide">
-                    PERSONALITY
+                    PERSONALITY (OPTIONAL)
                   </Label>
                   <Input
                     id="personality"
+                    value={personalityField}
+                    onChange={(e) => setPersonalityField(e.target.value)}
                     placeholder="e.g., Enthusiastic and motivational, Professional and analytical, Friendly and conversational..."
                     className="border-2 border-black rounded-lg font-medium shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white"
                   />
@@ -278,10 +452,12 @@ export default function Dashboard() {
                 {/* INSTRUCTION Field */}
                 <div className="space-y-2">
                   <Label htmlFor="instruction" className="text-lg font-black uppercase tracking-wide">
-                    INSTRUCTION
+                    INSTRUCTION *
                   </Label>
                   <Textarea
                     id="instruction"
+                    value={instructionField}
+                    onChange={(e) => setInstructionField(e.target.value)}
                     placeholder="Describe what you want the AI to do..."
                     rows={3}
                     className="border-2 border-black rounded-lg font-medium shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white resize-none"
@@ -291,10 +467,12 @@ export default function Dashboard() {
                 {/* CONTEXT Field */}
                 <div className="space-y-2">
                   <Label htmlFor="context" className="text-lg font-black uppercase tracking-wide">
-                    CONTEXT
+                    CONTEXT (OPTIONAL)
                   </Label>
                   <Textarea
                     id="context"
+                    value={contextField}
+                    onChange={(e) => setContextField(e.target.value)}
                     placeholder="Provide background information, history, or relevant details..."
                     rows={4}
                     className="border-2 border-black rounded-lg font-medium shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white resize-none"
@@ -304,10 +482,12 @@ export default function Dashboard() {
                 {/* EXAMPLE Field */}
                 <div className="space-y-2">
                   <Label htmlFor="example" className="text-lg font-black uppercase tracking-wide">
-                    EXAMPLE
+                    EXAMPLE (OPTIONAL)
                   </Label>
                   <Textarea
                     id="example"
+                    value={exampleField}
+                    onChange={(e) => setExampleField(e.target.value)}
                     placeholder="Show the desired output format or provide sample results..."
                     rows={4}
                     className="border-2 border-black rounded-lg font-medium shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white resize-none"
@@ -316,8 +496,22 @@ export default function Dashboard() {
 
                 {/* CREATE META PROMPT Button */}
                 <div className="pt-4">
-                  <Button className="w-full bg-black hover:bg-black/80 text-white rounded-xl border-2 border-black font-black text-lg py-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] uppercase tracking-wide">
-                    CREATE META PROMPT
+                  <Button 
+                    onClick={handleCreateMetaPrompt}
+                    disabled={isGenerating}
+                    className="w-full bg-black hover:bg-black/80 text-white rounded-xl border-2 border-black font-black text-lg py-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] uppercase tracking-wide disabled:opacity-50"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin inline" />
+                        GENERATING...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-5 w-5 inline" />
+                        CREATE META PROMPT
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -440,6 +634,69 @@ export default function Dashboard() {
                   {folder.name}
                 </Button>
               ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Generated Prompt Modal */}
+      <Dialog open={isPromptModalOpen} onOpenChange={setIsPromptModalOpen}>
+        <DialogContent className="max-w-3xl border-4 border-black rounded-xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="border-b-2 border-black pb-4">
+            <DialogTitle className="text-2xl font-black uppercase tracking-wide flex items-center gap-2">
+              <Sparkles className="h-6 w-6 text-purple-500" />
+              Generated Meta Prompt
+            </DialogTitle>
+            <DialogDescription className="text-sm mt-2">
+              Your enhanced prompt is ready to use with any AI model
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 pt-4">
+            {/* Token Count Badge */}
+            <div className="flex justify-end">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-2 border-purple-300">
+                ~{estimateTokenCount(generatedPrompt)} tokens
+              </Badge>
+            </div>
+            
+            {/* Generated Prompt Display */}
+            <div className="relative">
+              <Textarea
+                value={generatedPrompt}
+                readOnly
+                className="min-h-[300px] font-mono text-sm border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-gray-50 p-4"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={handleCopyPrompt}
+                variant="outline"
+                className="flex-1 border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold"
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copy to Clipboard
+              </Button>
+              
+              <Button
+                onClick={handleSavePrompt}
+                disabled={isGenerating}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold disabled:opacity-50"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save to Library
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </DialogContent>
