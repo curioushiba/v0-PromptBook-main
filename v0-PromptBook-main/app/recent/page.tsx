@@ -1,14 +1,21 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { toast } from "sonner"
 import { Copy, Heart, MoreVertical, Menu } from "lucide-react"
+import NavigationBar from "@/components/navigation-bar"
 import MobileNavigation from "@/components/mobile-navigation"
 import SearchBar from "@/components/search-bar"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 
 export default function RecentPromptsPage() {
-  const [prompts] = useState([
+  const [prompts, setPrompts] = useState<any[]>([])
+  const [filteredPrompts, setFilteredPrompts] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Sample data for demonstration
+  const samplePrompts = [
     {
       id: 1,
       title: "Marketing Copy Generator",
@@ -89,36 +96,92 @@ export default function RecentPromptsPage() {
     return `${Math.ceil(diffDays / 30)} months ago`
   }
 
-  const handleSearch = (query: string) => {
-    console.log("Searching recent prompts for:", query)
-    // TODO: Implement search logic for recent prompts
-  }
+  // Load recent prompts on mount
+  useEffect(() => {
+    loadRecentPrompts()
+  }, [])
+
+  const loadRecentPrompts = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/prompts?orderBy=created_at&limit=10')
+      
+      if (!response.ok) {
+        // Use sample data as fallback
+        setPrompts(samplePrompts)
+        setFilteredPrompts(samplePrompts)
+        return
+      }
+
+      const data = await response.json()
+      const loadedPrompts = data.prompts || samplePrompts
+      setPrompts(loadedPrompts)
+      setFilteredPrompts(loadedPrompts)
+    } catch (error) {
+      console.error('Error loading recent prompts:', error)
+      setPrompts(samplePrompts)
+      setFilteredPrompts(samplePrompts)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const handleSearch = useCallback((query: string) => {
+    if (!query.trim()) {
+      setFilteredPrompts(prompts)
+      return
+    }
+
+    const lowerQuery = query.toLowerCase()
+    const filtered = prompts.filter(prompt => 
+      prompt.title?.toLowerCase().includes(lowerQuery) ||
+      prompt.description?.toLowerCase().includes(lowerQuery) ||
+      prompt.role?.toLowerCase().includes(lowerQuery)
+    )
+    
+    setFilteredPrompts(filtered)
+    
+    if (filtered.length === 0) {
+      toast.info("No recent prompts match your search")
+    }
+  }, [prompts])
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-black text-black mb-2">RECENT PROMPTS</h1>
-            <p className="text-gray-600 text-lg">Your most recently created prompts, ordered from newest to oldest</p>
-          </div>
+        <header className="border-b-4 border-black p-4 sm:p-6 bg-white/40 backdrop-blur-md mb-8">
+          <div className="flex items-center justify-between gap-4">
+            {/* Left: Page title */}
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-black text-black tracking-tight whitespace-nowrap">RECENT PROMPTS</h1>
+              <p className="text-gray-600 text-xs sm:text-sm mt-0.5 truncate">Your most recently created prompts</p>
+            </div>
 
-          <div className="flex items-center gap-3">
-            <SearchBar placeholder="Search recent prompts..." onSearch={handleSearch} />
+            {/* Center: Navigation - hidden on mobile */}
+            <div className="hidden lg:flex flex-1 justify-center">
+              <NavigationBar />
+            </div>
 
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="rounded-xl border-2 border-black bg-transparent">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="border-r-4 border-black p-0">
-                <MobileNavigation />
-              </SheetContent>
-            </Sheet>
+            {/* Right: Search and Mobile menu */}
+            <div className="flex items-center gap-3">
+              <SearchBar placeholder="Search recent prompts..." onSearch={handleSearch} />
+
+              <div className="flex lg:hidden">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="icon" className="rounded-xl border-2 border-black bg-transparent">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="border-r-4 border-black p-0">
+                    <MobileNavigation />
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
           </div>
-        </div>
+        </header>
 
         {/* Prompts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

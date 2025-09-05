@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { toast } from "sonner"
 import { Copy, Heart, MoreVertical, Folder, Plus, Menu, X } from "lucide-react"
+import NavigationBar from "@/components/navigation-bar"
 import MobileNavigation from "@/components/mobile-navigation"
 import SearchBar from "@/components/search-bar"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -98,53 +100,144 @@ export default function PromptFoldersPage() {
     { name: "Teal to Green", value: "from-teal-400 to-green-500" },
   ]
 
-  const handleSearch = (query: string) => {
-    console.log("Searching folders and prompts for:", query)
-    // TODO: Implement search logic for folders and prompts
+  const handleSearch = useCallback((query: string) => {
+    if (!query.trim()) {
+      // Reset to show all folders if search is empty
+      return
+    }
+
+    const lowerQuery = query.toLowerCase()
+    // In a real app, this would filter the folders from the API
+    toast.info(`Searching for "${query}"...`)
+    
+    // This would be an API call in production:
+    // const filtered = folders.filter(folder => 
+    //   folder.name.toLowerCase().includes(lowerQuery)
+    // )
+  }, [])
+
+  const handleAddPrompt = async () => {
+    if (!promptName.trim() || !promptBody.trim() || !selectedFolder) {
+      toast.error("Please fill in all fields")
+      return
+    }
+
+    try {
+      // Create the prompt
+      const promptResponse = await fetch('/api/prompts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: promptName,
+          role: 'User',
+          instruction: promptBody,
+          context: '',
+          metaPrompt: promptBody,
+        }),
+      })
+
+      if (!promptResponse.ok) {
+        throw new Error('Failed to create prompt')
+      }
+
+      const { prompt } = await promptResponse.json()
+
+      // Add prompt to folder
+      const folderResponse = await fetch(`/api/folders/${selectedFolder}/prompts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt_id: prompt.id }),
+      })
+
+      if (!folderResponse.ok) {
+        throw new Error('Failed to add prompt to folder')
+      }
+
+      toast.success("Prompt added to folder successfully!")
+      setIsAddPromptModalOpen(false)
+      setPromptName("")
+      setPromptBody("")
+      setSelectedFolder("")
+    } catch (error) {
+      console.error('Error adding prompt:', error)
+      toast.error("Failed to add prompt. Please try again.")
+    }
   }
 
-  const handleAddPrompt = () => {
-    console.log("Adding new prompt:", { promptName, promptBody, selectedFolder })
-    // TODO: Implement add prompt logic
-    setIsAddPromptModalOpen(false)
-    setPromptName("")
-    setPromptBody("")
-    setSelectedFolder("")
-  }
+  const handleCreateFolder = async () => {
+    if (!folderName.trim()) {
+      toast.error("Please enter a folder name")
+      return
+    }
 
-  const handleCreateFolder = () => {
-    console.log("Creating new folder:", { folderName, folderColor })
-    // TODO: Implement create folder logic
-    setIsCreateFolderModalOpen(false)
-    setFolderName("")
-    setFolderColor("from-blue-400 to-purple-500")
+    try {
+      const response = await fetch('/api/folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: folderName,
+          description: '',
+          color: folderColor,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create folder')
+      }
+
+      const { folder } = await response.json()
+      toast.success(`Folder "${folderName}" created successfully!`)
+      
+      // In a real app, you'd refresh the folders list here
+      setIsCreateFolderModalOpen(false)
+      setFolderName("")
+      setFolderColor("from-blue-400 to-purple-500")
+      
+      // Refresh page to show new folder
+      window.location.reload()
+    } catch (error) {
+      console.error('Error creating folder:', error)
+      toast.error(error instanceof Error ? error.message : "Failed to create folder")
+    }
   }
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Header with Hamburger Menu */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-black text-black mb-2">PROMPT FOLDERS</h1>
-            <p className="text-gray-600 text-lg">Organize your favorite prompts into custom folders</p>
-          </div>
+        {/* Header */}
+        <header className="border-b-4 border-black p-4 sm:p-6 bg-white/40 backdrop-blur-md mb-8">
+          <div className="flex items-center justify-between gap-4">
+            {/* Left: Page title */}
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-black text-black tracking-tight whitespace-nowrap">FOLDERS</h1>
+              <p className="text-gray-600 text-xs sm:text-sm mt-0.5 truncate">Organize your prompts</p>
+            </div>
 
-          <div className="flex items-center gap-3">
-            <SearchBar placeholder="Search folders and prompts..." onSearch={handleSearch} />
+            {/* Center: Navigation - hidden on mobile */}
+            <div className="hidden lg:flex flex-1 justify-center">
+              <NavigationBar />
+            </div>
 
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="rounded-xl border-2 border-black bg-transparent">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="border-r-4 border-black p-0">
-                <MobileNavigation />
-              </SheetContent>
-            </Sheet>
+            {/* Right: Search and Mobile menu */}
+            <div className="flex items-center gap-3">
+              <SearchBar placeholder="Search folders and prompts..." onSearch={handleSearch} />
+
+              <div className="flex lg:hidden">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="icon" className="rounded-xl border-2 border-black bg-transparent">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="border-r-4 border-black p-0">
+                    <MobileNavigation />
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
           </div>
-        </div>
+        </header>
 
         <div className="mb-8 flex flex-wrap gap-4">
           <button

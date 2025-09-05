@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
+import type { Prompt, PromptUIDisplay, Folder, FolderUIDisplay, PromptFormData } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -12,7 +13,6 @@ import SearchBar from "@/components/search-bar"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PromptEditor } from "@/components/prompt-editor/prompt-editor"
-import { type PromptFormData } from "@/lib/validations/prompt"
 import { toast } from "sonner"
 
 export default function Dashboard() {
@@ -22,8 +22,8 @@ export default function Dashboard() {
   const [selectedPromptForFolder, setSelectedPromptForFolder] = useState<number | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null)
-  const [prompts, setPrompts] = useState<any[]>([])
-  const [favoritePrompts, setFavoritePrompts] = useState<any[]>([])
+  const [prompts, setPrompts] = useState<Prompt[]>([])
+  const [favoritePrompts, setFavoritePrompts] = useState<Prompt[]>([])
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(true)
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(true)
 
@@ -130,7 +130,7 @@ export default function Dashboard() {
   }, [])
 
   // Helper function to format database prompt for UI
-  const formatPromptForUI = (prompt: any) => {
+  const formatPromptForUI = (prompt: Prompt): PromptUIDisplay => {
     // Generate a simple emoji based on the title or use default
     const getEmojiFromTitle = (title: string) => {
       const lowercaseTitle = title.toLowerCase()
@@ -189,7 +189,7 @@ export default function Dashboard() {
       
       // Filter results for favorites and regular prompts
       const searchResults = data.prompts || []
-      const favoriteResults = searchResults.filter((p: any) => p.is_favorite)
+      const favoriteResults = searchResults.filter((p: Prompt) => p.is_favorite)
       const regularResults = searchResults
       
       setPrompts(regularResults)
@@ -246,7 +246,7 @@ export default function Dashboard() {
   }
 
   // Handle copying prompt to clipboard
-  const handleCopyPrompt = useCallback(async (prompt: any) => {
+  const handleCopyPrompt = useCallback(async (prompt: Prompt) => {
     try {
       const formattedPrompt = formatPromptForUI(prompt)
       await navigator.clipboard.writeText(prompt.meta_prompt || formattedPrompt.description)
@@ -263,7 +263,7 @@ export default function Dashboard() {
   }, [])
 
   // Handle toggling favorite status
-  const handleToggleFavorite = useCallback(async (prompt: any) => {
+  const handleToggleFavorite = useCallback(async (prompt: Prompt) => {
     try {
       const response = await fetch(`/api/prompts/${prompt.id}/favorite`, {
         method: 'PATCH',
@@ -405,18 +405,21 @@ export default function Dashboard() {
       <div className="w-full max-w-7xl mx-auto backdrop-blur-xl bg-white/30 border-4 border-black rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
         {/* Header */}
         <header className="border-b-4 border-black p-4 sm:p-6 bg-white/40 backdrop-blur-md">
-          <div className="flex justify-between items-center gap-4">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight">MAGE CRAFT</h1>
+          <div className="flex items-center justify-between gap-4">
+            {/* Left: Title */}
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight whitespace-nowrap">MAGE CRAFT</h1>
 
-            <div className="hidden md:flex">
+            {/* Center: Navigation - hidden on mobile */}
+            <div className="hidden lg:flex flex-1 justify-center">
               <NavigationBar />
             </div>
 
+            {/* Right: Search, Mobile menu, and Desktop buttons */}
             <div className="flex items-center gap-3">
               <SearchBar placeholder="Search prompts..." onSearch={handleSearch} />
 
               {/* Mobile menu */}
-              <div className="flex md:hidden">
+              <div className="flex lg:hidden">
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="outline" size="icon" className="rounded-xl border-2 border-black bg-transparent">
@@ -428,19 +431,19 @@ export default function Dashboard() {
                   </SheetContent>
                 </Sheet>
               </div>
-            </div>
 
-            {/* Desktop buttons */}
-            <div className="hidden sm:flex items-center gap-3">
-              <Button className="bg-black hover:bg-black/80 text-white rounded-xl border-2 border-black font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                Sign In
-              </Button>
-              <Button
-                variant="outline"
-                className="rounded-xl border-2 border-black font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-transparent"
-              >
-                Settings
-              </Button>
+              {/* Desktop buttons */}
+              <div className="hidden sm:flex items-center gap-3">
+                <Button className="bg-black hover:bg-black/80 text-white rounded-xl border-2 border-black font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  Sign In
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-xl border-2 border-black font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-transparent"
+                >
+                  Settings
+                </Button>
+              </div>
             </div>
           </div>
         </header>
