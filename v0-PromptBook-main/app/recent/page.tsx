@@ -82,7 +82,7 @@ export default function RecentPromptsPage() {
       context: "Teaching advanced mathematics to high school students",
       example: "Let's think of calculus like...",
     },
-  ])
+  ]
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

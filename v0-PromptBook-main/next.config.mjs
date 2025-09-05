@@ -1,13 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
+  images: {
+    domains: ['localhost'],
+    formats: ['image/avif', 'image/webp'],
   },
+  reactStrictMode: true,
+  swcMinify: true,
   typescript: {
+    // Temporarily ignore build errors for deployment
     ignoreBuildErrors: true,
   },
-  images: {
-    unoptimized: true,
+  eslint: {
+    // Temporarily ignore ESLint errors for deployment
+    ignoreDuringBuilds: true,
   },
 }
 

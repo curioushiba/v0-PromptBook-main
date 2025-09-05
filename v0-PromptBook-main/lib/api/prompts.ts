@@ -88,12 +88,17 @@ class PromptsAPI {
 
     // Apply folder filter
     if (filters.folderId) {
-      query = query.in("id", 
-        this.supabase
-          .from("prompt_folders")
-          .select("prompt_id")
-          .eq("folder_id", filters.folderId)
-      )
+      const { data: promptIds } = await this.supabase
+        .from("prompt_folders")
+        .select("prompt_id")
+        .eq("folder_id", filters.folderId)
+      
+      if (promptIds && promptIds.length > 0) {
+        query = query.in("id", promptIds.map(p => p.prompt_id))
+      } else {
+        // If no prompts in folder, return empty result
+        query = query.eq("id", "non-existent-id")
+      }
     }
 
     // Apply ordering

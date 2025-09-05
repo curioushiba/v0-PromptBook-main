@@ -61,7 +61,7 @@ export default function FavoritePromptsPage() {
       context: "Mediterranean diet with seasonal ingredients",
       example: "Mediterranean Quinoa Bowl with...",
     },
-  ])
+  ]
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
