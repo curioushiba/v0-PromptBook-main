@@ -7,7 +7,12 @@ export async function POST(request: NextRequest) {
     // Get API key from environment variable
     const apiKey = process.env.GEMINI_API_KEY
     
+    // Debug logging
+    console.log("Gemini API Route - Key exists:", !!apiKey)
+    console.log("Gemini API Route - Key prefix:", apiKey?.substring(0, 10) + "...")
+    
     if (!apiKey) {
+      console.error("Gemini API key not found in environment variables")
       return NextResponse.json(
         { error: "Gemini API key not configured" },
         { status: 500 }

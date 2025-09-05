@@ -7,7 +7,12 @@ export async function POST(request: NextRequest) {
     // Get API key from environment variable
     const apiKey = process.env.OPENAI_API_KEY
     
+    // Debug logging
+    console.log("OpenAI API Route - Key exists:", !!apiKey)
+    console.log("OpenAI API Route - Key prefix:", apiKey?.substring(0, 10) + "...")
+    
     if (!apiKey) {
+      console.error("OpenAI API key not found in environment variables")
       return NextResponse.json(
         { error: "OpenAI API key not configured" },
         { status: 500 }

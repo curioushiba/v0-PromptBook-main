@@ -69,7 +69,7 @@ Deliver the complete meta-prompt following the specified response template.`
       // so we rely on the API routes to handle authentication
       const provider = (typeof window !== 'undefined' 
         ? window.localStorage.getItem('llm_provider') 
-        : null) as LLMProvider || "openai"
+        : null) as LLMProvider || "gemini"  // Try Gemini first since you have that API key
 
       this.config = {
         provider,
