@@ -1,4 +1,5 @@
 import { PromptFormData } from "@/lib/validations/prompt"
+import { ACTIVE_SYSTEM_PROMPT } from "@/lib/llm/system-prompts"
 
 export type LLMProvider = "openai" | "gemini"
 
@@ -23,45 +24,39 @@ class LLMService {
   }
 
   private buildSystemPrompt(): string {
-    return `You are an expert prompt engineer specializing in creating highly effective prompts for AI models. 
-Your task is to take structured prompt components and synthesize them into a comprehensive, well-formatted meta prompt that will produce optimal results.
-
-Guidelines:
-1. Maintain clarity and specificity
-2. Use proper formatting and structure
-3. Incorporate all provided components seamlessly
-4. Optimize for the target AI model's understanding
-5. Ensure the prompt is actionable and unambiguous
-6. Add relevant context and constraints where appropriate
-7. Use examples effectively to guide behavior
-
-Output only the enhanced meta prompt without any additional explanation or metadata.`
+    // Use the Meta-Prompt Generation Framework v1.0
+    return ACTIVE_SYSTEM_PROMPT
   }
 
   private buildUserPrompt(data: PromptFormData): string {
+    // Format the user input according to the Meta-Prompt Framework's expectations
     const components = []
 
-    components.push(`ROLE: ${data.role}`)
+    // Always include Role and Instruction as they are required
+    components.push(`Role: ${data.role}`)
     
-    if (data.personality) {
-      components.push(`PERSONALITY: ${data.personality}`)
-    }
+    // Include optional fields only if provided
+    components.push(`Personality: ${data.personality || "Not specified - use professional and clear communication style"}`)
     
-    components.push(`INSTRUCTIONS: ${data.instruction}`)
+    components.push(`Instruction: ${data.instruction}`)
     
-    if (data.context) {
-      components.push(`CONTEXT: ${data.context}`)
-    }
+    components.push(`Context: ${data.context || "General purpose - no specific domain constraints"}`)
     
-    if (data.example) {
-      components.push(`EXAMPLES: ${data.example}`)
-    }
+    components.push(`Examples: ${data.example || "No examples provided - generate appropriate demonstrations based on the role and instructions"}`)
 
-    return `Create a comprehensive meta prompt from these components:
+    // Format according to the framework's input processing protocol
+    return `Please generate a comprehensive meta-prompt based on these five structured inputs:
 
 ${components.join("\n\n")}
 
-Synthesize these into a single, cohesive prompt that maximizes effectiveness.`
+Apply the full Meta-Prompt Generation Framework methodology including:
+- Phase 1: Analysis of requirements
+- Phase 2: Synthesis with hierarchical structure
+- Quality assurance criteria
+- Enhancement protocols (Chain-of-Thought, Few-Shot Learning, etc.)
+- Proper markdown formatting with section headers
+
+Deliver the complete meta-prompt following the specified response template.`
   }
 
   async generateMetaPrompt(
