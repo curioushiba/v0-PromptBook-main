@@ -25,7 +25,12 @@ class LLMService {
 
   private buildSystemPrompt(): string {
     // Use the Meta-Prompt Generation Framework v1.0
-    return ACTIVE_SYSTEM_PROMPT
+    const prompt = ACTIVE_SYSTEM_PROMPT
+    console.log("System prompt loaded, length:", prompt?.length || 0)
+    if (!prompt) {
+      console.error("WARNING: System prompt is empty!")
+    }
+    return prompt
   }
 
   private buildUserPrompt(data: PromptFormData): string {
@@ -45,18 +50,11 @@ class LLMService {
     components.push(`Examples: ${data.example || "No examples provided - generate appropriate demonstrations based on the role and instructions"}`)
 
     // Format according to the framework's input processing protocol
-    return `Please generate a comprehensive meta-prompt based on these five structured inputs:
+    return `Based on the following user inputs, generate a comprehensive meta-prompt that will optimize LLM performance:
 
 ${components.join("\n\n")}
 
-Apply the full Meta-Prompt Generation Framework methodology including:
-- Phase 1: Analysis of requirements
-- Phase 2: Synthesis with hierarchical structure
-- Quality assurance criteria
-- Enhancement protocols (Chain-of-Thought, Few-Shot Learning, etc.)
-- Proper markdown formatting with section headers
-
-Deliver the complete meta-prompt following the specified response template.`
+IMPORTANT: Apply the full Meta-Prompt Generation Framework methodology to transform these basic inputs into a sophisticated, production-ready prompt. The output should be a complete, enhanced meta-prompt that incorporates best practices in prompt engineering, including clear structure, context setting, and optimization techniques.`
   }
 
   async generateMetaPrompt(
@@ -135,6 +133,10 @@ Deliver the complete meta-prompt following the specified response template.`
     userPrompt: string,
     options: GenerateMetaPromptOptions
   ): Promise<string> {
+    console.log("generateWithGemini called")
+    console.log("System prompt length:", systemPrompt.length)
+    console.log("User prompt preview:", userPrompt.substring(0, 200))
+    
     const response = await fetch("/api/llm/gemini", {
       method: "POST",
       headers: {
@@ -150,6 +152,8 @@ Deliver the complete meta-prompt following the specified response template.`
       signal: options.signal
     })
 
+    console.log("Gemini API response status:", response.status)
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }))
       console.error("Gemini API error:", errorData)
@@ -162,6 +166,7 @@ Deliver the complete meta-prompt following the specified response template.`
     }
 
     const result = await response.json()
+    console.log("Gemini API result:", result)
     return result.content
   }
 

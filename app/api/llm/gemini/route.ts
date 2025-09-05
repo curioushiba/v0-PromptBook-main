@@ -40,6 +40,10 @@ export async function POST(request: NextRequest) {
     // Construct API URL with model and method
     const apiUrl = `${GEMINI_API_URL}/${model}:generateContent?key=${apiKey}`
 
+    // Debug: Log the prompt being sent
+    console.log("Gemini API - Full prompt being sent:")
+    console.log(prompt.substring(0, 500) + "...")
+    
     // Prepare request body for Gemini
     const geminiRequestBody = {
       contents: [{
@@ -120,6 +124,10 @@ export async function POST(request: NextRequest) {
     
     // Extract content from Gemini response format
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
+    
+    // Debug: Log the response
+    console.log("Gemini API - Response content:")
+    console.log(content.substring(0, 500) + "...")
     
     // Check for safety blocks
     if (data.candidates?.[0]?.finishReason === "SAFETY") {

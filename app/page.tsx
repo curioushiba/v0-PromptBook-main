@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from "sonner"
 import { validatePromptSize, estimateTokenCount } from "@/lib/validations/prompt"
 import { prompts } from "@/lib/api/prompts"
-import { generateMetaPrompt, estimateLLMCost } from "@/lib/llm/service"
+import { generateMetaPrompt as generateAIMetaPrompt, estimateLLMCost } from "@/lib/llm/service"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 
@@ -108,8 +108,8 @@ export default function Dashboard() {
     setSelectedPromptForFolder(null)
   }
 
-  const generateMetaPrompt = () => {
-    // Combine all fields into a structured meta-prompt
+  const generateSimpleMetaPrompt = () => {
+    // Combine all fields into a structured meta-prompt (fallback when AI is unavailable)
     let metaPrompt = ""
     
     if (roleField) {
@@ -185,14 +185,23 @@ export default function Dashboard() {
       
       try {
         // Try to generate with AI
-        metaPrompt = await generateMetaPrompt(formData, {
+        console.log("Attempting to generate with AI, formData:", formData)
+        metaPrompt = await generateAIMetaPrompt(formData, {
           streaming: false
         })
+        console.log("AI generation successful, response:", metaPrompt)
+        
+        // Check if we got a valid response
+        if (!metaPrompt) {
+          console.warn("Empty response from AI")
+          throw new Error("AI returned empty response")
+        }
+        
         usingAI = true
         toast.dismiss("ai-generating")
       } catch (llmError) {
         // If LLM fails, fall back to simple concatenation
-        console.warn("LLM generation failed, using fallback:", llmError)
+        console.error("LLM generation failed, using fallback:", llmError)
         toast.dismiss("ai-generating")
         
         // Show warning that we're using fallback
@@ -201,7 +210,7 @@ export default function Dashboard() {
         })
         
         // Use the simple concatenation as fallback
-        metaPrompt = generateMetaPrompt()
+        metaPrompt = generateSimpleMetaPrompt()
         
         if (!metaPrompt) {
           toast.error("No content to generate", {
