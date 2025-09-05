@@ -30,7 +30,8 @@
       "Bash(npx tsc:*)",
       "Bash(npm test)",
       "Bash(sed:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(pnpm install:*)"
     ],
     "deny": [],
     "ask": []
