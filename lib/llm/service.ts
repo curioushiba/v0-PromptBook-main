@@ -70,19 +70,16 @@ Synthesize these into a single, cohesive prompt that maximizes effectiveness.`
   ): Promise<string> {
     if (!this.config) {
       // Use default configuration from environment
-      const provider = process.env.NEXT_PUBLIC_LLM_PROVIDER as LLMProvider || "openai"
-      const apiKey = provider === "openai" 
-        ? process.env.OPENAI_API_KEY 
-        : process.env.GEMINI_API_KEY
-
-      if (!apiKey) {
-        throw new Error(`API key not configured for ${provider}`)
-      }
+      // Note: We can't access server-side env vars from client, 
+      // so we rely on the API routes to handle authentication
+      const provider = (typeof window !== 'undefined' 
+        ? window.localStorage.getItem('llm_provider') 
+        : null) as LLMProvider || "openai"
 
       this.config = {
         provider,
-        apiKey: apiKey,
-        model: provider === "openai" ? "gpt-4-turbo-preview" : "gemini-pro",
+        apiKey: "", // API key is handled server-side
+        model: provider === "openai" ? "gpt-3.5-turbo" : "gemini-pro",
         temperature: 0.7,
         maxTokens: 2000
       }

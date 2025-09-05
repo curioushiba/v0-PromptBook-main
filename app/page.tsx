@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from "sonner"
 import { validatePromptSize, estimateTokenCount } from "@/lib/validations/prompt"
 import { prompts } from "@/lib/api/prompts"
+import { generateMetaPrompt, estimateLLMCost } from "@/lib/llm/service"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 
@@ -36,6 +37,7 @@ export default function Dashboard() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedPrompt, setGeneratedPrompt] = useState("")
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false)
+  const [isAIGenerated, setIsAIGenerated] = useState(false)
 
   const myPrompts = [
     {
@@ -169,22 +171,54 @@ export default function Dashboard() {
     
     setIsGenerating(true)
     
+    // Show AI generation notification
+    toast.info("AI is enhancing your prompt...", {
+      description: "This may take a few seconds",
+      duration: 10000,
+      id: "ai-generating"
+    })
+    
     try {
-      // Generate the meta-prompt
-      const metaPrompt = generateMetaPrompt()
+      // First, try to use LLM service for enhanced generation
+      let metaPrompt = ""
+      let usingAI = false
       
-      if (!metaPrompt) {
-        toast.error("No content to generate", {
-          description: "Please fill in at least the role and instructions fields"
+      try {
+        // Try to generate with AI
+        metaPrompt = await generateMetaPrompt(formData, {
+          streaming: false
         })
-        return
+        usingAI = true
+        toast.dismiss("ai-generating")
+      } catch (llmError) {
+        // If LLM fails, fall back to simple concatenation
+        console.warn("LLM generation failed, using fallback:", llmError)
+        toast.dismiss("ai-generating")
+        
+        // Show warning that we're using fallback
+        toast.warning("AI service unavailable", {
+          description: "Using basic prompt generation instead"
+        })
+        
+        // Use the simple concatenation as fallback
+        metaPrompt = generateMetaPrompt()
+        
+        if (!metaPrompt) {
+          toast.error("No content to generate", {
+            description: "Please fill in at least the role and instructions fields"
+          })
+          return
+        }
       }
       
       setGeneratedPrompt(metaPrompt)
+      setIsAIGenerated(usingAI)
       setIsPromptModalOpen(true)
       
-      toast.success("Meta prompt generated!", {
-        description: "Your enhanced prompt is ready to use"
+      toast.success(usingAI ? "AI-enhanced prompt generated!" : "Meta prompt generated!", {
+        description: usingAI 
+          ? "Your AI-enhanced prompt is ready to use" 
+          : "Your prompt has been created"
       })
     } catch (error) {
       toast.error("Generation failed", {
@@ -645,16 +679,25 @@ export default function Dashboard() {
           <DialogHeader className="border-b-2 border-black pb-4">
             <DialogTitle className="text-2xl font-black uppercase tracking-wide flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-purple-500" />
-              Generated Meta Prompt
+              {isAIGenerated ? "AI-Enhanced Meta Prompt" : "Generated Meta Prompt"}
             </DialogTitle>
             <DialogDescription className="text-sm mt-2">
-              Your enhanced prompt is ready to use with any AI model
+              {isAIGenerated 
+                ? "Your prompt has been professionally enhanced by AI for optimal results"
+                : "Your prompt has been structured and formatted for use"}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 pt-4">
-            {/* Token Count Badge */}
-            <div className="flex justify-end">
+            {/* Badges */}
+            <div className="flex justify-between">
+              {isAIGenerated && (
+                <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-2 border-black">
+                  <Sparkles className="mr-1 h-3 w-3" />
+                  AI Enhanced
+                </Badge>
+              )}
+              <div className="flex-1" />
               <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-2 border-purple-300">
                 ~{estimateTokenCount(generatedPrompt)} tokens
               </Badge>
