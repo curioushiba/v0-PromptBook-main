@@ -251,6 +251,7 @@ export default function Dashboard() {
     try {
       setIsGenerating(true)
       
+      // Create the prompt and save it as a favorite
       const savedPrompt = await prompts.create({
         title: promptTitle || "Untitled Prompt",
         role: roleField,
@@ -261,8 +262,13 @@ export default function Dashboard() {
         metaPrompt: generatedPrompt
       })
       
-      toast.success("Prompt saved!", {
-        description: "Your prompt has been saved to your library"
+      // Immediately mark it as favorite since user clicked "Save to Library"
+      if (savedPrompt && savedPrompt.id) {
+        await prompts.toggleFavorite(savedPrompt.id)
+      }
+      
+      toast.success("Saved to your favorites!", {
+        description: "Your prompt has been saved to My Favorite Prompts"
       })
       
       // Clear form
@@ -275,8 +281,8 @@ export default function Dashboard() {
       setGeneratedPrompt("")
       setIsPromptModalOpen(false)
       
-      // Optionally navigate to the prompts page
-      // router.push("/prompts")
+      // Navigate to the favorites page to show the saved prompt
+      router.push("/favorites")
     } catch (error) {
       toast.error("Save failed", {
         description: error instanceof Error ? error.message : "Could not save prompt"
